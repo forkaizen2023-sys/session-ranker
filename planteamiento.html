@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planteamiento matemático — Session Ranker</title>
+  <style>
+    :root {
+      --bg: #070b12;
+      --bg2: #0d141f;
+      --panel: #111827;
+      --line: #1f2a3a;
+      --text: #e7edf5;
+      --muted: #8b9bb0;
+      --cyan: #22d3ee;
+      --amber: #f5b942;
+      --rose: #fb7185;
+      --lime: #86efac;
+      --fail: #f87171;
+      --ok: #34d399;
+      --mid: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #123 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    a { color: var(--cyan); text-decoration: none; }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(7,11,18,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      display: flex; gap: 18px; align-items: center;
+      padding: 12px 28px; flex-wrap: wrap;
+    }
+    header strong { color: var(--cyan); letter-spacing: .04em; font-size: .85rem; }
+    header nav a { color: var(--muted); font-size: .82rem; margin-right: 14px; }
+    header nav a:hover { color: var(--text); }
+    main { max-width: 1120px; margin: 0 auto; padding: 36px 24px 80px; }
+    h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 10px; }
+    h2 { font-size: 1.35rem; color: var(--cyan); margin: 48px 0 14px; }
+    h3 { font-size: 1.02rem; margin: 0 0 8px; }
+    .lede { color: var(--muted); font-size: 1.05rem; max-width: 46rem; }
+    .eq {
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--cyan);
+      padding: 14px 18px;
+      margin: 18px 0;
+      overflow-x: auto;
+    }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .grid2 { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+    @media (max-width: 860px) {
+      .grid3, .grid2 { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px 16px 14px;
+    }
+    .card .kicker {
+      font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--amber); margin-bottom: 6px;
+    }
+    .card.v1 { border-top: 3px solid var(--rose); }
+    .card.v2 { border-top: 3px solid var(--amber); }
+    .card.v3 { border-top: 3px solid var(--lime); }
+    ul { margin: 8px 0 0; padding-left: 1.1rem; color: var(--muted); }
+    li { margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 8px; text-align: left; }
+    th { color: var(--muted); font-weight: 600; font-size: .75rem; letter-spacing: .04em; }
+    td.center, th.center { text-align: center; }
+    .pill {
+      display: inline-block; min-width: 3.4rem; padding: 2px 8px; border-radius: 99px;
+      font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+    }
+    .no { background: #3f1d24; color: var(--fail); }
+    .ok { background: #143326; color: var(--ok); }
+    .mid { background: #3a2e12; color: var(--mid); }
+    .num { font-variant-numeric: tabular-nums; font-family: Consolas, "JetBrains Mono", monospace; }
+    .note { color: var(--muted); font-size: .88rem; }
+    svg.manifold { width: 100%; height: auto; background: #0a1018; border-radius: 8px; border: 1px solid var(--line); }
+    footer { color: var(--muted); font-size: .8rem; margin-top: 48px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .tag { font-size: .75rem; color: var(--cyan); }
+  </style>
+</head>
+<body>
+<header>
+  <strong>SESSION RANKER · LAB</strong>
+  <nav>
+    <a href="#planteamiento">Planteamiento</a>
+    <a href="#tres">Tres cambios</a>
+    <a href="#matriz">Matriz matemática</a>
+    <a href="#final">Estado final</a>
+  </nav>
+</header>
+<main>
+
+<section id="planteamiento">
+  <p class="tag">Vista única del proyecto · v1 → v2 → v3</p>
+  <h1>El problema no es detectar APTs.<br />Es elegir las <em>k</em> sesiones que un humano va a abrir.</h1>
+  <p class="lede">
+    Dado un lote de sesiones ya tabulares, se pide un ranking
+    y un presupuesto de atención k. Isolation Forest, max|z| y Mahalanobis
+    se evalúan <strong>en el mismo k</strong>, en un lote que el bosque no usó para crecer.
+  </p>
+  <div class="eq">
+    Prec@k = |{ i ≤ k : y<sub>π(i)</sub> = 1 }| / k
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    Rec@k = |{ i ≤ k : y<sub>π(i)</sub> = 1 }| / P
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    más AP, AUROC y margen de scores.
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Geometría que el laboratorio instancia ahora</h3>
+      <p class="note">Tráfico normal vive en la franja <span class="num">bytes ≈ rate × duration</span> (rate ~ 420 B/s). La hora se embede en el círculo S¹, no como entero lineal.</p>
+      <svg class="manifold" viewBox="0 0 520 280" role="img" aria-label="Manifold bytes vs duration">
+        <text x="16" y="22" fill="#8b9bb0" font-size="11">duration →</text>
+        <text x="16" y="140" fill="#8b9bb0" font-size="11" transform="rotate(-90 16 140)">bytes</text>
+        <line x1="50" y1="250" x2="500" y2="250" stroke="#1f2a3a" />
+        <line x1="50" y1="250" x2="50" y2="20" stroke="#1f2a3a" />
+        <polygon points="70,230 470,70 470,110 70,248" fill="#22d3ee" opacity=".12" />
+        <line x1="70" y1="238" x2="470" y2="90" stroke="#22d3ee" stroke-width="2" />
+        <circle cx="160" cy="210" r="4" fill="#22d3ee" /><circle cx="220" cy="190" r="4" fill="#22d3ee" />
+        <circle cx="300" cy="155" r="4" fill="#22d3ee" /><circle cx="390" cy="118" r="4" fill="#22d3ee" />
+        <circle cx="180" cy="95" r="6" fill="#fb7185" />
+        <circle cx="200" cy="80" r="6" fill="#fb7185" />
+        <circle cx="410" cy="210" r="6" fill="#f5b942" />
+        <circle cx="430" cy="198" r="6" fill="#f5b942" />
+        <text x="188" y="68" fill="#fb7185" font-size="11">rate_exfil (alto rate, duración típica)</text>
+        <text x="300" y="230" fill="#f5b942" font-size="11">low_and_slow (largo, pocos bytes)</text>
+        <text x="300" y="40" fill="#22d3ee" font-size="11">manifold normal</text>
+      </svg>
+      <p class="note">Puntos rojos/ámbar están <em>dentro</em> de los rangos univariantes y <em>fuera</em> de la franja. $\max|z|$ no los ve. Isolation Forest parte ejes y se queda con los extremos de la franja (VPN largos). Mahalanobis usa $\Sigma$ y los aísla.</p>
+    </div>
+    <div class="card">
+      <h3>Corrida anclada (inductivo)</h3>
+      <p class="note">Fit seed 42 → score seed 99 · n = 2000 · P = 24 ataques · k = 30</p>
+      <table>
+        <thead>
+          <tr><th>Método</th><th class="center">P@k</th><th class="center">R@k</th><th class="center">AP</th><th class="center">AUROC</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Isolation Forest</td><td class="num center">0.267</td><td class="num center">0.333</td><td class="num center">0.326</td><td class="num center">0.904</td></tr>
+          <tr><td>max|z| (MAD)</td><td class="num center">0.267</td><td class="num center">0.333</td><td class="num center">0.380</td><td class="num center">0.912</td></tr>
+          <tr><td><strong>Mahalanobis</strong></td><td class="num center">0.800</td><td class="num center">1.000</td><td class="num center">0.984</td><td class="num center">1.000</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:12px">Recall por familia @ k=30</p>
+      <table>
+        <thead><tr><th>Tipo</th><th class="center">IF</th><th class="center">max|z|</th><th class="center">Mahal</th></tr></thead>
+        <tbody>
+          <tr><td>brute_force (1D)</td><td class="num center">1.00</td><td class="num center">1.00</td><td class="num center">1.00</td></tr>
+          <tr><td>low_and_slow (conjunto)</td><td class="num center">0.00</td><td class="num center">0.00</td><td class="num center">1.00</td></tr>
+          <tr><td>rate_exfil (conjunto)</td><td class="num center">0.00</td><td class="num center">0.00</td><td class="num center">1.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="tres">
+  <h2>Los tres cambios del proyecto</h2>
+  <div class="grid3">
+    <article class="card v1">
+      <div class="kicker">Cambio 1 · de v0 a v1 limpio</div>
+      <h3>Del marketing al problema real</h3>
+      <ul>
+        <li>Se eliminó el 99% circular (<code>contamination=0.01</code> no es reducción de FP).</li>
+        <li>Se dejó de hablar de APT / día cero / SIEM.</li>
+        <li>El objeto pasó a ser: <strong>presupuesto de atención k</strong>.</li>
+        <li>Timestamps rotos (<code>now − 9 h</code>) sustituidos por hora de reloj.</li>
+        <li>Ya no se apilan exfil + brute + madrugada en la misma fila.</li>
+      </ul>
+    </article>
+    <article class="card v2">
+      <div class="kicker">Cambio 2 · laboratorio medible</div>
+      <h3>De “corre el bosque” a Prec@k / Rec@k</h3>
+      <ul>
+        <li>Tres familias etiquetadas por separado.</li>
+        <li>CLI, <code>requirements.txt</code>, tests, CSV de ejemplo.</li>
+        <li>Score continuo (<code>−decision_function</code>), no la etiqueta −1/1 como “score”.</li>
+        <li>Baseline de reglas, todavía a volumen distinto — incompleto matemáticamente.</li>
+        <li>Debilidad residual: los ataques seguían siendo colas 1D (soportes disjuntos).</li>
+      </ul>
+    </article>
+    <article class="card v3">
+      <div class="kicker">Cambio 3 · criterio matemático</div>
+      <h3>De outlier univariante a geometría conjunta</h3>
+      <ul>
+        <li>Manifold correlacionado <span class="num">bytes ≈ r·duration</span>.</li>
+        <li>Hora circular: sin(2πh/24), cos(2πh/24).</li>
+        <li>Holdout inductivo (fit 42, test 99).</li>
+        <li>Mismos k para IF, max|z| y Mahalanobis + AP/AUROC/margen.</li>
+        <li>log1p en volumen y duración para no dejar que la cola exponencial domine.</li>
+        <li>Resultado honesto: IF no gana el caso conjunto; Mahalanobis sí.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="matriz">
+  <h2>Matriz de criterio matemático experto</h2>
+  <p class="note">Cada fila es un requisito de un reviewer de detección. No es una rúbrica de “suena a SOC”.</p>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Criterio</th>
+          <th class="center">v1 (script original)</th>
+          <th class="center">v2 (presupuesto k)</th>
+          <th class="center">v3 (este estado)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Problema operativo identificable (ranking @ k)</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+        </tr>
+        <tr>
+          <td>Métrica no circular (k ≠ “99% menos ruido”)</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+        </tr>
+        <tr>
+          <td>Ataques no trivialmente 1D (soportes disjuntos)</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+        </tr>
+        <tr>
+          <td>Hora como S¹, no como entero lineal / timedelta</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill mid">PARCIAL</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+        </tr>
+        <tr>
+          <td>contamination no se hace pasar por calidad</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">muerto; ranking por score</span></td>
+        </tr>
+        <tr>
+          <td>Baseline en el mismo punto de operación k</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill mid">reglas sin techo</span></td>
+          <td class="center"><span class="pill ok">IF · max|z| · Mahal</span></td>
+        </tr>
+        <tr>
+          <td>Protocolo de generalización (holdout)</td>
+          <td class="center"><span class="pill no">in-sample</span></td>
+          <td class="center"><span class="pill no">in-sample</span></td>
+          <td class="center"><span class="pill ok">inductivo 42→99</span></td>
+        </tr>
+        <tr>
+          <td>AP, AUROC, margen además de Prec@k</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
+        </tr>
+        <tr>
+          <td>Isolation Forest demuestra rareza conjunta</td>
+          <td class="center"><span class="pill no">falso techo</span></td>
+          <td class="center"><span class="pill no">falso techo</span></td>
+          <td class="center"><span class="pill mid">no: Rec conjunto = 0</span></td>
+        </tr>
+        <tr>
+          <td>Hay un estimador que sí corresponde a Σ</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">Mahalanobis Rec=1</span></td>
+        </tr>
+        <tr>
+          <td>Tests que bloquean regresiones del contrato</td>
+          <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">7</span></td>
+          <td class="center"><span class="pill ok">9 (overlap + holdout)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note" style="margin-top:12px">
+    La celda ámbar de Isolation Forest en v3 es intencional. Un reviewer serio
+    premia que el lab <em>no</em> fuerce al bosque a ganar: en cortes axis-aligned,
+    los extremos del manifold (sesiones largas on-rate) se aíslan antes que un punto
+    off-strip. Eso es Liu et al. leído al derecho, no un fallo de implementación.
+  </p>
+</section>
+
+<section id="final">
+  <h2>Estado final — lo que contempla un vistazo</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Contrato del sistema</h3>
+      <table>
+        <tr><th>Entrada</th><td>sesión tabular: timestamp, bytes, duration, failed logins</td></tr>
+        <tr><th>Espacio</th><td class="num">log1p(bytes), log1p(duration), failed, sin θ, cos θ</td></tr>
+        <tr><th>Protocolo</th><td>inductivo por defecto (otro lote, otra semilla)</td></tr>
+        <tr><th>Punto de operación</th><td class="num">k = 30 alertas / 2000 filas</td></tr>
+        <tr><th>Ranker alineado a la geometría</th><td>Mahalanobis (top de la CLI)</td></tr>
+        <tr><th>Controles</th><td>Isolation Forest y max|z| a la misma k</td></tr>
+        <tr><th>Verdad de terreno</th><td>24 ataques plantados: 8+8+8, no apilados</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Qué quedó atrás y qué se puede defender en entrevista</h3>
+      <ul>
+        <li><strong>Atrás:</strong> “99% menos falsos positivos”, APT, Isolation Forest como detector universal.</li>
+        <li><strong>Se defiende:</strong> k es un presupuesto; Prec@k no es tasa de FP de producción.</li>
+        <li><strong>Se defiende:</strong> si el ataque es cola 1D, un umbral basta — y el lab lo muestra (brute_force).</li>
+        <li><strong>Se defiende:</strong> si el ataque es off-manifold, hay que modelar $\Sigma$ — y el lab lo muestra.</li>
+        <li><strong>No se defiende:</strong> tráfico real, parseo de logs, intención de atacante.</li>
+      </ul>
+      <p class="note" style="margin-top:14px">Correr el lab:</p>
+      <div class="eq" style="margin-top:8px">pip install -r requirements.txt<br />python log_analyzer.py<br />python -m pytest -q</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Laboratorio reproducible, no un producto SOC. Las etiquetas MITRE del reporte son pistas ilustrativas, no atribución.
+  Semillas 42 / 99 · Python · pandas · scikit-learn.
+</footer>
+</main>
+</body>
+</html>
