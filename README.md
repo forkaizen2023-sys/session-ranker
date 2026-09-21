@@ -6,7 +6,7 @@
 
 **What this is not:** an APT detector, a SIEM, or a 99% false-positive claim.
 
-Open [`planteamiento.html`](planteamiento.html) for the three iterations, the mathematical matrix, and the final numbers in one view.
+Open [`[planteamiento.html](https://forkaizen2023-sys.github.io/session-ranker/)`](planteamiento.html) for the three iterations, the mathematical matrix, and the final numbers in one view.
 
 ---
 
