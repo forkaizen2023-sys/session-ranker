@@ -5,5 +5,7 @@ venv/
 *.pyc
 .python-version
 output/
+*.pkl
+models/
 .idea/
 .vscode/
