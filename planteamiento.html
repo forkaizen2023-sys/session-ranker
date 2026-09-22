@@ -106,7 +106,7 @@
 <main>
 
 <section id="planteamiento">
-  <p class="tag">Vista única del proyecto · v1 → v2 → v3</p>
+  <p class="tag">Vista única del proyecto · v1 → v2 → v3 → v4</p>
   <h1>El problema no es detectar APTs.<br />Es elegir las <em>k</em> sesiones que un humano va a abrir.</h1>
   <p class="lede">
     Dado un lote de sesiones ya tabulares, se pide un ranking
@@ -145,26 +145,28 @@
     </div>
     <div class="card">
       <h3>Corrida anclada (inductivo)</h3>
-      <p class="note">Fit seed 42 → score seed 99 · n = 2000 · P = 24 ataques · k = 30</p>
+      <p class="note">Fit <strong>benign</strong> seed 42 → score seed 99 · n = 2000 · P = 24 · k = 30 · slow_hours=mixed. AUROC no se redondea a 1.</p>
       <table>
         <thead>
-          <tr><th>Método</th><th class="center">P@k</th><th class="center">R@k</th><th class="center">AP</th><th class="center">AUROC</th></tr>
+          <tr><th>Método</th><th class="center">P@k</th><th class="center">R@k</th><th class="center">AP</th><th class="center">AUROC</th><th class="center">inv</th></tr>
         </thead>
         <tbody>
-          <tr><td>Isolation Forest</td><td class="num center">0.267</td><td class="num center">0.333</td><td class="num center">0.326</td><td class="num center">0.904</td></tr>
-          <tr><td>max|z| (MAD)</td><td class="num center">0.267</td><td class="num center">0.333</td><td class="num center">0.380</td><td class="num center">0.912</td></tr>
-          <tr><td><strong>Mahalanobis</strong></td><td class="num center">0.800</td><td class="num center">1.000</td><td class="num center">0.984</td><td class="num center">1.000</td></tr>
+          <tr><td>Isolation Forest</td><td class="num center">0.200</td><td class="num center">0.250</td><td class="num center">0.091</td><td class="num center">0.8756</td><td class="num center">5898</td></tr>
+          <tr><td>max|z| (MAD)</td><td class="num center">0.267</td><td class="num center">0.333</td><td class="num center">0.360</td><td class="num center">0.8692</td><td class="num center">6181</td></tr>
+          <tr><td>rate residual</td><td class="num center">0.500</td><td class="num center">0.625</td><td class="num center">0.544</td><td class="num center">0.7323</td><td class="num center">12695</td></tr>
+          <tr><td><strong>Mahalanobis</strong></td><td class="num center">0.800</td><td class="num center">1.000</td><td class="num center">0.987</td><td class="num center">0.999852</td><td class="num center">7</td></tr>
         </tbody>
       </table>
       <p class="note" style="margin-top:12px">Recall por familia @ k=30</p>
       <table>
-        <thead><tr><th>Tipo</th><th class="center">IF</th><th class="center">max|z|</th><th class="center">Mahal</th></tr></thead>
+        <thead><tr><th>Tipo</th><th class="center">IF</th><th class="center">max|z|</th><th class="center">resid</th><th class="center">Mahal</th></tr></thead>
         <tbody>
-          <tr><td>brute_force (1D)</td><td class="num center">1.00</td><td class="num center">1.00</td><td class="num center">1.00</td></tr>
-          <tr><td>low_and_slow (conjunto)</td><td class="num center">0.00</td><td class="num center">0.00</td><td class="num center">1.00</td></tr>
-          <tr><td>rate_exfil (conjunto)</td><td class="num center">0.00</td><td class="num center">0.00</td><td class="num center">1.00</td></tr>
+          <tr><td>brute_force (1D)</td><td class="num center">0.75</td><td class="num center">1.00</td><td class="num center">0.00</td><td class="num center">1.00</td></tr>
+          <tr><td>low_and_slow (conjunto)</td><td class="num center">0.00</td><td class="num center">0.00</td><td class="num center">1.00</td><td class="num center">1.00</td></tr>
+          <tr><td>rate_exfil (conjunto)</td><td class="num center">0.00</td><td class="num center">0.00</td><td class="num center">0.875</td><td class="num center">1.00</td></tr>
         </tbody>
       </table>
+      <p class="note" style="margin-top:12px">Sweep 8 seeds: Mahalanobis Rmin = 0.958, worst max = 31. Manifold bimodal: Rec@k Mahalanobis = 0.333. Una semilla no es un resultado.</p>
     </div>
   </div>
 </section>
@@ -207,6 +209,17 @@
       </ul>
     </article>
   </div>
+  <div class="card v3" style="margin-top:14px;border-top:3px solid #22d3ee">
+    <div class="kicker">Cambio 4 · el claim puede perder</div>
+    <h3>De screenshot 42→99 a protocolo que se falsifica</h3>
+    <ul>
+      <li>Fit default sobre benignos cuando hay <code>is_attack</code>.</li>
+      <li><code>low_and_slow</code> ya no nace solo de madrugada.</li>
+      <li>Cuarto ranker: residual de tasa (física del manifold), fuera de Σ.</li>
+      <li>AUROC a 6 decimales + conteo de inversiones. Nunca 1.000 con margin &lt; 0.</li>
+      <li><code>--sweep</code> y <code>--manifold bimodal</code>: Rec@k de Mahalanobis cae a 0.333.</li>
+    </ul>
+  </div>
 </section>
 
 <section id="matriz">
@@ -219,7 +232,8 @@
           <th>Criterio</th>
           <th class="center">v1 (script original)</th>
           <th class="center">v2 (presupuesto k)</th>
-          <th class="center">v3 (este estado)</th>
+          <th class="center">v3</th>
+          <th class="center">v4 (este estado)</th>
         </tr>
       </thead>
       <tbody>
@@ -228,10 +242,12 @@
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
         </tr>
         <tr>
           <td>Métrica no circular (k ≠ “99% menos ruido”)</td>
           <td class="center"><span class="pill no">NO</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
         </tr>
@@ -240,54 +256,63 @@
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
         </tr>
         <tr>
           <td>Hora como S¹, no como entero lineal / timedelta</td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill mid">PARCIAL</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">sin muleta nocturna</span></td>
         </tr>
         <tr>
           <td>contamination no se hace pasar por calidad</td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
           <td class="center"><span class="pill ok">muerto; ranking por score</span></td>
+          <td class="center"><span class="pill ok">SÍ</span></td>
         </tr>
         <tr>
           <td>Baseline en el mismo punto de operación k</td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill mid">reglas sin techo</span></td>
           <td class="center"><span class="pill ok">IF · max|z| · Mahal</span></td>
+          <td class="center"><span class="pill ok">+ residual de tasa</span></td>
         </tr>
         <tr>
           <td>Protocolo de generalización (holdout)</td>
           <td class="center"><span class="pill no">in-sample</span></td>
           <td class="center"><span class="pill no">in-sample</span></td>
           <td class="center"><span class="pill ok">inductivo 42→99</span></td>
+          <td class="center"><span class="pill ok">benign + sweep 8 seeds</span></td>
         </tr>
         <tr>
           <td>AP, AUROC, margen además de Prec@k</td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill ok">SÍ</span></td>
+          <td class="center"><span class="pill ok">+ inversiones, sin 1.000 falso</span></td>
         </tr>
         <tr>
           <td>Isolation Forest demuestra rareza conjunta</td>
           <td class="center"><span class="pill no">falso techo</span></td>
           <td class="center"><span class="pill no">falso techo</span></td>
           <td class="center"><span class="pill mid">no: Rec conjunto = 0</span></td>
+          <td class="center"><span class="pill mid">sigue en 0; no es el control</span></td>
         </tr>
         <tr>
           <td>Hay un estimador que sí corresponde a Σ</td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill ok">Mahalanobis Rec=1</span></td>
+          <td class="center"><span class="pill mid">sí en unimodal; Rec=0.33 bimodal</span></td>
         </tr>
         <tr>
           <td>Tests que bloquean regresiones del contrato</td>
           <td class="center"><span class="pill no">NO</span></td>
           <td class="center"><span class="pill ok">7</span></td>
           <td class="center"><span class="pill ok">9 (overlap + holdout)</span></td>
+          <td class="center"><span class="pill ok">15 (residual, sweep, bimodal)</span></td>
         </tr>
       </tbody>
     </table>
@@ -310,9 +335,9 @@
         <tr><th>Espacio</th><td class="num">log1p(bytes), log1p(duration), failed, sin θ, cos θ</td></tr>
         <tr><th>Protocolo</th><td>inductivo por defecto (otro lote, otra semilla)</td></tr>
         <tr><th>Punto de operación</th><td class="num">k = 30 alertas / 2000 filas</td></tr>
-        <tr><th>Ranker alineado a la geometría</th><td>Mahalanobis (top de la CLI)</td></tr>
-        <tr><th>Controles</th><td>Isolation Forest y max|z| a la misma k</td></tr>
-        <tr><th>Verdad de terreno</th><td>24 ataques plantados: 8+8+8, no apilados</td></tr>
+        <tr><th>Ranker alineado a la geometría</th><td>Mahalanobis, con asterisco: un solo elipsoide</td></tr>
+        <tr><th>Controles</th><td>IF, max|z|, residual de tasa, a la misma k</td></tr>
+        <tr><th>Verdad de terreno</th><td>24 ataques 8+8+8; fit benign; sweep; bimodal como contraejemplo</td></tr>
       </table>
     </div>
     <div class="card">
@@ -322,17 +347,17 @@
         <li><strong>Se defiende:</strong> k es un presupuesto; Prec@k no es tasa de FP de producción.</li>
         <li><strong>Se defiende:</strong> si el ataque es cola 1D, un umbral basta — y el lab lo muestra (brute_force).</li>
         <li><strong>Se defiende:</strong> si el ataque es off-manifold, hay que modelar $\Sigma$ — y el lab lo muestra.</li>
-        <li><strong>No se defiende:</strong> tráfico real, parseo de logs, intención de atacante.</li>
+        <li><strong>No se defiende:</strong> tráfico real, parseo de logs, intención de atacante, Σ cuando hay dos tasas normales.</li>
       </ul>
       <p class="note" style="margin-top:14px">Correr el lab:</p>
-      <div class="eq" style="margin-top:8px">pip install -r requirements.txt<br />python log_analyzer.py<br />python -m pytest -q</div>
+      <div class="eq" style="margin-top:8px">pip install -r requirements.txt<br />python log_analyzer.py<br />python log_analyzer.py --sweep<br />python log_analyzer.py --sweep --manifold bimodal<br />python -m pytest -q</div>
     </div>
   </div>
 </section>
 
 <footer>
-  Laboratorio reproducible, no un producto SOC. Las etiquetas MITRE del reporte son pistas ilustrativas, no atribución.
-  Semillas 42 / 99 · Python · pandas · scikit-learn.
+  Laboratorio reproducible, no un producto SOC. Las analogías de escenario no son cobertura ATT&CK.
+  Fit benign · sweep de semillas · manifold bimodal como test de ruptura · Python · pandas · scikit-learn.
 </footer>
 </main>
 </body>
